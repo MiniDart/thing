@@ -2,7 +2,6 @@ package local.iotserver.thing.network;
 
 import org.eclipse.jetty.client.HttpClient;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 

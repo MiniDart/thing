@@ -6,7 +6,7 @@ import local.iotserver.thing.network.ServerManager;
 
 
 /**
- * Hello world!
+ *
  *
  */
 public class Main

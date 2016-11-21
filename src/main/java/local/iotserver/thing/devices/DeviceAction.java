@@ -1,5 +1,8 @@
 package local.iotserver.thing.devices;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 /**
  * Created by Sergey on 19.11.2016.
  */
@@ -58,10 +61,21 @@ public class DeviceAction {
     }
     public void generateValue(){
         if (format.equals("int")){
-            value=""+(int)Math.random()*1000;
+            value=""+(int)(Math.random()*1000);
+            System.out.println("Generated "+this.name+"="+this.value+"; format="+this.format);
         }
         else if (format.equals("list")){
-            value=modes[(int)Math.random()*modes.length];
+            value=modes[(int)(Math.random()*modes.length)];
+            System.out.println("Generated "+this.name+"="+this.value+"; format="+this.format);
+        }
+        else if (format.equals("date")){
+            Date d=new Date();
+            d.setHours((int)(Math.random()*24));
+            d.setMinutes((int)(Math.random()*60));
+            d.setSeconds((int)(Math.random()*60));
+            SimpleDateFormat dateFormat=new SimpleDateFormat("hh:mm:ss");
+            value=dateFormat.format(d);
+            System.out.println("Generated "+this.name+"="+this.value+"; format="+this.format);
         }
     }
 }

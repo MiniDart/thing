@@ -30,7 +30,6 @@ public class Device implements Runnable {
         Type type = new TypeToken<Map<String, String>>(){}.getType();
         Map<String, String > read = gson.fromJson(param, type);
         this.id=Integer.parseInt(read.get("id"));
-        sayHi();
         this.name=read.get("name");
         this.thingGroup=read.get("thingGroup");
         for (Map.Entry<String,String> entry:read.entrySet()){
@@ -39,11 +38,12 @@ public class Device implements Runnable {
             }
         }
         devices.put(this.id,this);
+        sayHi();
     }
 
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
-            System.out.println(this.id+" run");
+            System.out.println("Device id="+this.id+" is sending data...");
             String res = generateJsonString();
             HttpClient client = clientManager.getClient("default");
             Fields.Field upgrade_thing = new Fields.Field("thing_param", res);
@@ -51,11 +51,11 @@ public class Device implements Runnable {
             fields.put(upgrade_thing);
             ContentResponse response = null;
             try {
-                response = client.FORM("http://iotmanager.local/upgradeparams", fields);
+                response = client.FORM("http://iotmanager.local/upgradeactionsdata", fields);
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            System.out.println(this.id+"_response from run="+response.getContentAsString());
+            System.out.println("Sending data status for device id="+this.id+" - "+response.getContentAsString());
             try {
                 Thread.sleep(10000);
             }
@@ -77,7 +77,7 @@ public class Device implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println(this.id+"_creation="+response.getContentAsString());
+        System.out.println("Creation status for device id="+this.id+" - "+response.getContentAsString());
     }
 
     public static HashMap<Integer, Device> getDevices() {
