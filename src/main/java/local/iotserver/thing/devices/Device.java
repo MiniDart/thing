@@ -3,8 +3,6 @@ package local.iotserver.thing.devices;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import local.iotserver.thing.network.ClientManager;
-import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.util.Fields;
 
 import java.lang.reflect.Type;
@@ -34,7 +32,7 @@ public class Device implements Runnable {
         this.thingGroup=read.get("thingGroup");
         for (Map.Entry<String,String> entry:read.entrySet()){
             if (entry.getKey().indexOf("action_")==0){
-                deviceActions.add(new DeviceAction(entry.getValue()));
+                deviceActions.add(new DeviceAction(entry.getValue(),this));
             }
         }
         devices.put(this.id,this);
@@ -43,19 +41,7 @@ public class Device implements Runnable {
 
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
-            System.out.println("Device id="+this.id+" is sending data...");
-            String res = generateJsonString();
-            HttpClient client = clientManager.getClient("default");
-            Fields.Field upgrade_thing = new Fields.Field("thing_param", res);
-            Fields fields = new Fields();
-            fields.put(upgrade_thing);
-            ContentResponse response = null;
-            try {
-                response = client.FORM("http://iotmanager.local/upgradeactionsdata", fields);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            System.out.println("Sending data status for device id="+this.id+" - "+response.getContentAsString());
+            sendDataFromActions();
             try {
                 Thread.sleep(10000);
             }
@@ -67,17 +53,11 @@ public class Device implements Runnable {
 
     }
     private void sayHi(){
-        HttpClient client = clientManager.getClient("default");
         Fields.Field upgrade_thing = new Fields.Field("new_thing", param);
         Fields fields = new Fields();
         fields.put(upgrade_thing);
-        ContentResponse response = null;
-        try {
-            response = client.FORM("http://iotmanager.local/newthing", fields);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        System.out.println("Creation status for device id="+this.id+" - "+response.getContentAsString());
+        String answer=clientManager.sendPost("http://iotmanager.local/newthing",fields);
+        System.out.println("Creation status for device id="+this.id+" - "+answer);
     }
 
     public static HashMap<Integer, Device> getDevices() {
@@ -119,5 +99,14 @@ public class Device implements Runnable {
         }
         res+="}";
         return res;
+    }
+    public void sendDataFromActions(){
+        System.out.println("Device id="+this.id+" is sending data...");
+        String res = generateJsonString();
+        Fields.Field upgrade_thing = new Fields.Field("thing_param", res);
+        Fields fields = new Fields();
+        fields.put(upgrade_thing);
+        String  answer=clientManager.sendPost("http://iotmanager.local/upgradeactionsdata",fields);
+        System.out.println("Sending data status for device id="+this.id+" - "+answer);
     }
 }

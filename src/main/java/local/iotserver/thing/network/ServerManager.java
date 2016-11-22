@@ -1,6 +1,7 @@
 package local.iotserver.thing.network;
 
 import local.iotserver.thing.handler.ThingCreationHandler;
+import local.iotserver.thing.handler.UpgradeActionHandler;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.HandlerList;
@@ -23,6 +24,7 @@ public class ServerManager {
 
     private ServerManager() {
         ThingCreationHandler thingCreationHandler=new ThingCreationHandler();
+        UpgradeActionHandler upgradeActionHandler=new UpgradeActionHandler();
 
         Server server=new Server(3000);
         ServletContextHandler context=new ServletContextHandler(ServletContextHandler.SESSIONS);
@@ -35,6 +37,7 @@ public class ServerManager {
         handlers.setHandlers(new Handler[] { resource_handler, context });
         server.setHandler(handlers);
         context.addServlet(new ServletHolder(thingCreationHandler),"/newdevice");
+        context.addServlet(new ServletHolder(upgradeActionHandler),"/upgradeaction");
         try {
             server.start();
             server.join();

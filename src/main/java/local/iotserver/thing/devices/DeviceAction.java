@@ -1,5 +1,6 @@
 package local.iotserver.thing.devices;
 
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -13,8 +14,13 @@ public class DeviceAction {
     private int importance;
     private String value;
     private String[] modes=null;
+    private int delay=0;
+    private Device owner;
 
-    public DeviceAction(String param) {
+
+    public DeviceAction(String param, Device owner) {
+        this.owner=owner;
+
         String[] arrParam=param.split(", ");
         this.name=arrParam[0];
         this.format=arrParam[1];
@@ -23,6 +29,9 @@ public class DeviceAction {
         if (arrParam.length>4){
             this.modes=arrParam[4].split(":");
         }
+    }
+    public Device getOwner() {
+        return owner;
     }
     public String[] getModes() {
         return modes;
@@ -58,8 +67,15 @@ public class DeviceAction {
 
     public void setValue(String value) {
         this.value = value;
+        this.delay=5;
+        owner.sendDataFromActions();
     }
     public void generateValue(){
+        if (delay>0){
+            delay--;
+            System.out.println("Stop generating value for "+this.name+"; count="+this.delay);
+            return;
+        }
         if (format.equals("int")){
             value=""+(int)(Math.random()*1000);
             System.out.println("Generated "+this.name+"="+this.value+"; format="+this.format);

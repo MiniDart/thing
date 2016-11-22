@@ -1,6 +1,8 @@
 package local.iotserver.thing.network;
 
 import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.util.Fields;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -52,5 +54,15 @@ public class ClientManager {
             }
         }
         clientMap.clear();
+    }
+    public String sendPost(String url,Fields fields){
+        HttpClient client = getInstance().getClient("default");
+        ContentResponse response = null;
+        try {
+            response = client.FORM(url, fields);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return response.getContentAsString();
     }
 }
