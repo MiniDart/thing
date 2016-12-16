@@ -1,8 +1,14 @@
 package local.iotserver.thing.devices;
 
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 
 /**
  * Created by Sergey on 19.11.2016.
@@ -11,24 +17,43 @@ public class DeviceAction {
     private String name;
     private String format;
     private boolean isChangeable;
-    private int importance;
     private String value;
     private String[] modes=null;
     private int delay=0;
     private Device owner;
+    private boolean isNeedStatistics;
+    private SupportDeviceAction[] supportActions=null;
 
-
-    public DeviceAction(String param, Device owner) {
+    public DeviceAction(JsonObject param, Device owner) {
         this.owner=owner;
-
-        String[] arrParam=param.split(", ");
-        this.name=arrParam[0];
-        this.format=arrParam[1];
-        this.isChangeable =arrParam[2].equals("1")?true:false;
-        this.importance=Integer.parseInt(arrParam[3]);
-        if (arrParam.length>4){
-            this.modes=arrParam[4].split(":");
+        this.name=param.get("name").getAsString();
+        this.format=param.get("format").getAsString();
+        this.isChangeable=param.get("isChangeable").getAsBoolean();
+        this.isNeedStatistics=param.get("isNeedStatistics").getAsBoolean();
+        JsonArray jsonModes=param.getAsJsonArray("range");
+        this.modes=new String[jsonModes.size()];
+        for (int i=0;i<modes.length;i++){
+            modes[i]=jsonModes.get(i).getAsJsonObject().get("item").getAsString();
         }
+        JsonArray jsonSupports=param.getAsJsonArray("support");
+        System.out.println("jsonSupports="+jsonSupports);
+        if (jsonSupports!=null) {
+            supportActions=new SupportDeviceAction[jsonSupports.size()];
+            for (int i = 0; i < jsonSupports.size(); i++) {
+                SupportDeviceAction d=new SupportDeviceAction(jsonSupports.get(i).getAsJsonObject(),this.owner,this);
+                supportActions[i]=d;
+                this.owner.getDeviceActions().add(d);
+            }
+        }
+
+
+
+    }
+    public SupportDeviceAction[] getSupportActions() {
+        return supportActions;
+    }
+    public boolean isNeedStatistics() {
+        return isNeedStatistics;
     }
     public Device getOwner() {
         return owner;
@@ -49,9 +74,6 @@ public class DeviceAction {
         return isChangeable;
     }
 
-    public int getImportance() {
-        return importance;
-    }
 
     public Object getValue() {
         return value;
@@ -61,9 +83,6 @@ public class DeviceAction {
         this.name = name;
     }
 
-    public void setImportance(int importance) {
-        this.importance = importance;
-    }
 
     public void setValue(String value) {
         this.value = value;
