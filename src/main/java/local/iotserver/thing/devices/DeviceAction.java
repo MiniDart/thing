@@ -30,14 +30,15 @@ public class DeviceAction {
         this.format=param.get("format").getAsString();
         this.isChangeable=param.get("isChangeable").getAsBoolean();
         this.isNeedStatistics=param.get("isNeedStatistics").getAsBoolean();
-        JsonArray jsonModes=param.getAsJsonArray("range");
-        this.modes=new String[jsonModes.size()];
-        for (int i=0;i<modes.length;i++){
-            modes[i]=jsonModes.get(i).getAsJsonObject().get("item").getAsString();
+        if (param.has("range")&&format.equals("list")) {
+            JsonArray jsonModes = param.getAsJsonArray("range");
+            this.modes = new String[jsonModes.size()];
+            for (int i = 0; i < modes.length; i++) {
+                modes[i] = jsonModes.get(i).getAsJsonObject().get("name").getAsString();
+            }
         }
+        if (param.has("support")){
         JsonArray jsonSupports=param.getAsJsonArray("support");
-        System.out.println("jsonSupports="+jsonSupports);
-        if (jsonSupports!=null) {
             supportActions=new SupportDeviceAction[jsonSupports.size()];
             for (int i = 0; i < jsonSupports.size(); i++) {
                 SupportDeviceAction d=new SupportDeviceAction(jsonSupports.get(i).getAsJsonObject(),this.owner,this);
