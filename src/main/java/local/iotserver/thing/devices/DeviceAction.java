@@ -23,6 +23,8 @@ public class DeviceAction {
     private Device owner;
     private boolean isNeedStatistics;
     private SupportDeviceAction[] supportActions=null;
+    private String from;
+    private String to;
 
     public DeviceAction(JsonObject param, Device owner) {
         this.owner=owner;
@@ -30,11 +32,18 @@ public class DeviceAction {
         this.format=param.get("format").getAsString();
         this.isChangeable=param.get("isChangeable").getAsBoolean();
         this.isNeedStatistics=param.get("isNeedStatistics").getAsBoolean();
-        if (param.has("range")&&format.equals("list")) {
-            JsonArray jsonModes = param.getAsJsonArray("range");
-            this.modes = new String[jsonModes.size()];
-            for (int i = 0; i < modes.length; i++) {
-                modes[i] = jsonModes.get(i).getAsJsonObject().get("name").getAsString();
+        if (param.has("range")) {
+            if (this.format.equals("list")) {
+                JsonArray jsonModes = param.getAsJsonArray("range");
+                this.modes = new String[jsonModes.size()];
+                for (int i = 0; i < modes.length; i++) {
+                    modes[i] = jsonModes.get(i).getAsJsonObject().get("name").getAsString();
+                }
+            }
+            else {
+                JsonArray jsonRange=param.getAsJsonArray("range");
+                this.from=jsonRange.get(0).getAsJsonObject().has("from")?jsonRange.get(0).getAsJsonObject().get("from").getAsString():null;
+                this.to=jsonRange.get(0).getAsJsonObject().has("to")?jsonRange.get(0).getAsJsonObject().get("to").getAsString():null;
             }
         }
         if (param.has("support")){
@@ -43,7 +52,6 @@ public class DeviceAction {
             for (int i = 0; i < jsonSupports.size(); i++) {
                 SupportDeviceAction d=new SupportDeviceAction(jsonSupports.get(i).getAsJsonObject(),this.owner,this);
                 supportActions[i]=d;
-                this.owner.getDeviceActions().add(d);
             }
         }
 
@@ -88,7 +96,7 @@ public class DeviceAction {
     public void setValue(String value) {
         this.value = value;
         this.delay=5;
-        owner.sendDataFromActions();
+        owner.sendDataFromActions(false);
     }
     public void generateValue(){
         if (delay>0){
@@ -96,8 +104,10 @@ public class DeviceAction {
             System.out.println("Stop generating value for "+this.name+"; count="+this.delay);
             return;
         }
-        if (format.equals("int")){
-            value=""+(int)(Math.random()*1000);
+        if (format.equals("number")){
+            int from=this.from==null?(-10000):Integer.parseInt(this.from);
+            int to=this.to==null?(10000):Integer.parseInt(this.to);
+            value=""+(int)(Math.random()*to+from);
             System.out.println("Generated "+this.name+"="+this.value+"; format="+this.format);
         }
         else if (format.equals("list")){

@@ -1,5 +1,6 @@
 package local.iotserver.thing.network;
 
+import local.iotserver.thing.handler.GetActionDataHandler;
 import local.iotserver.thing.handler.ThingCreationHandler;
 import local.iotserver.thing.handler.UpgradeActionHandler;
 import org.eclipse.jetty.server.Handler;
@@ -25,19 +26,21 @@ public class ServerManager {
     private ServerManager() {
         ThingCreationHandler thingCreationHandler=new ThingCreationHandler();
         UpgradeActionHandler upgradeActionHandler=new UpgradeActionHandler();
+        GetActionDataHandler getActionDataHandler=new GetActionDataHandler();
 
         Server server=new Server(3000);
         ServletContextHandler context=new ServletContextHandler(ServletContextHandler.SESSIONS);
-        ResourceHandler resource_handler = new ResourceHandler();
+        ResourceHandler resourceHandler = new ResourceHandler();
 
-        resource_handler.setDirectoriesListed(true);
-        resource_handler.setWelcomeFiles(new String[]{ "thing.html" });
-        resource_handler.setResourceBase("pages/");
+        resourceHandler.setDirectoriesListed(true);
+        resourceHandler.setWelcomeFiles(new String[]{ "thing.html" });
+        resourceHandler.setResourceBase("pages/");
         HandlerList handlers = new HandlerList();
-        handlers.setHandlers(new Handler[] { resource_handler, context });
+        handlers.setHandlers(new Handler[] { resourceHandler, context });
         server.setHandler(handlers);
         context.addServlet(new ServletHolder(thingCreationHandler),"/newdevice");
         context.addServlet(new ServletHolder(upgradeActionHandler),"/upgradeaction");
+        context.addServlet(new ServletHolder(getActionDataHandler),"/getactiondata");
         try {
             server.start();
             server.join();
