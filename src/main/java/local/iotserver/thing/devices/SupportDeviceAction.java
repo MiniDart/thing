@@ -13,7 +13,7 @@ public class SupportDeviceAction extends DeviceAction {
     private DeviceAction actionOwner;
     private boolean isIndividual;
 
-    public SupportDeviceAction(JsonObject param, Device owner, DeviceAction actionOwner) {
+    public SupportDeviceAction(JsonObject param, ActionGroup owner, DeviceAction actionOwner) {
         super(param, owner);
         this.actionOwner=actionOwner;
         this.isIndividual=param.get("isIndividual").getAsBoolean();

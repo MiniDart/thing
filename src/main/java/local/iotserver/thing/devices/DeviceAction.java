@@ -2,13 +2,10 @@ package local.iotserver.thing.devices;
 
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 
 /**
  * Created by Sergey on 19.11.2016.
@@ -20,13 +17,13 @@ public class DeviceAction {
     private String value;
     private String[] modes=null;
     private int delay=0;
-    private Device owner;
+    private ActionGroup owner;
     private boolean isNeedStatistics;
     private SupportDeviceAction[] supportActions=null;
     private String from;
     private String to;
 
-    public DeviceAction(JsonObject param, Device owner) {
+    public DeviceAction(JsonObject param, ActionGroup owner) {
         this.owner=owner;
         this.name=param.get("name").getAsString();
         this.format=param.get("format").getAsString();
@@ -64,7 +61,7 @@ public class DeviceAction {
     public boolean isNeedStatistics() {
         return isNeedStatistics;
     }
-    public Device getOwner() {
+    public ActionGroup getOwner() {
         return owner;
     }
     public String[] getModes() {
@@ -96,7 +93,7 @@ public class DeviceAction {
     public void setValue(String value) {
         this.value = value;
         this.delay=5;
-        owner.sendDataFromActions(false);
+        owner.getOwner().sendDataFromActions(false);
     }
     public void generateValue(){
         if (delay>0){

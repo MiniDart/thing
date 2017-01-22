@@ -36,11 +36,13 @@ public class UpgradeActionHandler extends HttpServlet {
         Type type = new TypeToken<Map<String, String>>(){}.getType();
         Map<String, String > read = gson.fromJson(param, type);
         System.out.println("device_id="+read.get("device_id"));
+        /*
         ArrayList<DeviceAction> deviceActions=Device.getDevices().get(Integer.parseInt(read.get("device_id"))).getDeviceActions();
         for (int i=0;i<deviceActions.size();i++){
             if (deviceActions.get(i).getName().equals(read.get("name"))){
                 deviceActions.get(i).setValue(read.get("value"));
             }
         }
+        */
     }
 }
