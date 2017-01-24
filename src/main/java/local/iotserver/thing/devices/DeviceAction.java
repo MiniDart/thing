@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 
 /**
  * Created by Sergey on 19.11.2016.
@@ -20,8 +21,10 @@ public class DeviceAction {
     private ActionGroup owner;
     private boolean isNeedStatistics;
     private SupportDeviceAction[] supportActions=null;
+    private HashMap<String,SupportDeviceAction> supportDeviceActionsMap=new HashMap<String, SupportDeviceAction>();
     private String from;
     private String to;
+
 
     public DeviceAction(JsonObject param, ActionGroup owner) {
         this.owner=owner;
@@ -49,11 +52,15 @@ public class DeviceAction {
             for (int i = 0; i < jsonSupports.size(); i++) {
                 SupportDeviceAction d=new SupportDeviceAction(jsonSupports.get(i).getAsJsonObject(),this.owner,this);
                 supportActions[i]=d;
+                supportDeviceActionsMap.put(d.getName().toLowerCase(),d);
             }
         }
 
 
 
+    }
+    public HashMap<String, SupportDeviceAction> getSupportDeviceActionsMap() {
+        return supportDeviceActionsMap;
     }
     public SupportDeviceAction[] getSupportActions() {
         return supportActions;
@@ -92,8 +99,7 @@ public class DeviceAction {
 
     public void setValue(String value) {
         this.value = value;
-        this.delay=5;
-        owner.getOwner().sendDataFromActions(false);
+        this.delay=10;
     }
     public void generateValue(){
         if (delay>0){

@@ -15,12 +15,14 @@ public class Device implements Runnable {
     private final static ArrayList<Thread> deviceThreads=new ArrayList<Thread>();
     private String param;
     private ArrayList<ActionGroup> actionGroups=new ArrayList<ActionGroup>();
+    private HashMap<String,ActionGroup> actionGroupsMap=new HashMap<String, ActionGroup>();
     private int id;
     private String name;
     private  String thingGroup;
     private boolean haveStatisticsElements;
     private int updateTime;
     static ClientManager clientManager=ClientManager.getInstance();
+
     public Device(String param) {
         this.param=param;
         JsonObject mainFeatures = new JsonParser().parse(param).getAsJsonObject();
@@ -30,7 +32,9 @@ public class Device implements Runnable {
         this.updateTime=mainFeatures.get("updateTime").getAsInt();
         JsonArray actionGroups=mainFeatures.get("actionGroups").getAsJsonArray();
         for (int i=0;i<actionGroups.size();i++){
-            this.actionGroups.add(new ActionGroup(actionGroups.get(i).getAsJsonObject(),this));
+            ActionGroup actionGroup=new ActionGroup(actionGroups.get(i).getAsJsonObject(),this);
+            this.actionGroups.add(actionGroup);
+            this.actionGroupsMap.put(actionGroup.getName().toLowerCase(),actionGroup);
         }
         for (int i=0;i<this.actionGroups.size();i++){
             if (this.actionGroups.get(i).isHaveStatisticsElements()){
@@ -67,7 +71,12 @@ public class Device implements Runnable {
         System.out.println("Creation status for device id="+this.id+" - "+answer);
 
     }
-
+    public ArrayList<ActionGroup> getActionGroups() {
+        return actionGroups;
+    }
+    public HashMap<String, ActionGroup> getActionGroupsMap() {
+        return actionGroupsMap;
+    }
     public static HashMap<Integer, Device> getDevices() {
         return devices;
     }
