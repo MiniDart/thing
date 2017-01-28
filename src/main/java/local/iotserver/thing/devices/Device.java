@@ -14,8 +14,7 @@ public class Device implements Runnable {
     private final static HashMap<Integer,Device> devices=new HashMap<Integer, Device>();
     private final static ArrayList<Thread> deviceThreads=new ArrayList<Thread>();
     private String param;
-    private ArrayList<ActionGroup> actionGroups=new ArrayList<ActionGroup>();
-    private HashMap<String,ActionGroup> actionGroupsMap=new HashMap<String, ActionGroup>();
+    private HashMap<Integer,DeviceAction> deviceActionHashMap=new HashMap<Integer, DeviceAction>();
     private int id;
     private String name;
     private  String thingGroup;
@@ -31,17 +30,8 @@ public class Device implements Runnable {
         this.thingGroup=mainFeatures.get("thingGroup").getAsString();
         this.updateTime=mainFeatures.get("updateTime").getAsInt();
         JsonArray actionGroups=mainFeatures.get("actionGroups").getAsJsonArray();
-        for (int i=0;i<actionGroups.size();i++){
-            ActionGroup actionGroup=new ActionGroup(actionGroups.get(i).getAsJsonObject(),this);
-            this.actionGroups.add(actionGroup);
-            this.actionGroupsMap.put(actionGroup.getName().toLowerCase(),actionGroup);
-        }
-        for (int i=0;i<this.actionGroups.size();i++){
-            if (this.actionGroups.get(i).isHaveStatisticsElements()){
-                haveStatisticsElements=true;
-                break;
-            }
-        }
+        findActions(actionGroups);
+
         devices.put(this.id,this);
         sayHi();
     }
@@ -71,11 +61,22 @@ public class Device implements Runnable {
         System.out.println("Creation status for device id="+this.id+" - "+answer);
 
     }
-    public ArrayList<ActionGroup> getActionGroups() {
-        return actionGroups;
+    private void findActions(JsonArray actionGroupsJson){
+        for (JsonElement actionGroupJson:actionGroupsJson){
+            if (actionGroupJson.getAsJsonObject().has("actions")){
+                JsonArray actionsJson=actionGroupJson.getAsJsonObject().get("actions").getAsJsonArray();
+                for (JsonElement actionJson:actionsJson){
+                    DeviceAction deviceAction=new DeviceAction(actionJson.getAsJsonObject(),this);
+                    this.deviceActionHashMap.put(deviceAction.getId(),deviceAction);
+                }
+            }
+            if (actionGroupJson.getAsJsonObject().has("actionGroups")){
+                findActions(actionGroupJson.getAsJsonObject().get("actionGroups").getAsJsonArray());
+            }
+        }
     }
-    public HashMap<String, ActionGroup> getActionGroupsMap() {
-        return actionGroupsMap;
+    public HashMap<Integer, DeviceAction> getDeviceActionHashMap() {
+        return deviceActionHashMap;
     }
     public static HashMap<Integer, Device> getDevices() {
         return devices;
@@ -153,82 +154,18 @@ public class Device implements Runnable {
             }
         hashMapJson.put("actionGroups",gson.toJson(groupActionString));
         */
-        ArrayList<ActionGroup> actionGroups;
-        if (isForStatistics){
-            actionGroups=new ArrayList<ActionGroup>();
-            for (int i=0;i<this.actionGroups.size();i++) {
-                if (this.actionGroups.get(i).isHaveStatisticsElements()) actionGroups.add(this.actionGroups.get(i));
-            }
-        }
-        else actionGroups=this.actionGroups;
-        if (actionGroups.size()==0) return "Error, there is no data to do a values";
         StringBuilder res=new StringBuilder();
-        res.append("{\"thing_id\":\""+this.id+"\",\"actionGroups\":[");
-        for (int i=0;i<actionGroups.size();i++){
-            ActionGroup actionGroup=actionGroups.get(i);
-            res.append("{\"name\":\""+(actionGroup.getName()==null?"":actionGroup.getName())+"\",\"actions\":[");
-            ArrayList<DeviceAction> deviceActions;
-            if (isForStatistics){
-                deviceActions=new ArrayList<DeviceAction>();
-                for (int m=0;m<actionGroup.getDeviceActions().size();m++){
-                    if(actionGroup.getDeviceActions().get(i).isNeedStatistics()) deviceActions.add(actionGroup.getDeviceActions().get(i));
-                }
-            }
-            else deviceActions=actionGroup.getDeviceActions();
-            for (int n=0;n<deviceActions.size();n++) {
-                DeviceAction d = deviceActions.get(n);
-                d.generateValue();
-                res.append("{\"name\":\"" + d.getName() + "\",\"value\":\"" + d.getValue() + "\"");
-                if (d.getSupportActions() != null) {
-                    res.append(",\"supportActions\":[");
-                    SupportDeviceAction[] supportDeviceActions;
-                    if (isForStatistics) {
-                        ArrayList<SupportDeviceAction> supportDeviceActionsArr = new ArrayList<SupportDeviceAction>();
-                        for (int l = 0; l < d.getSupportActions().length; l++) {
-                            if (d.getSupportActions()[l].isNeedStatistics())
-                                supportDeviceActionsArr.add(d.getSupportActions()[l]);
-                        }
-                        supportDeviceActions = new SupportDeviceAction[supportDeviceActionsArr.size()];
-                        supportDeviceActionsArr.toArray(supportDeviceActions);
-                    } else supportDeviceActions = d.getSupportActions();
-                    for (int l = 0; l < supportDeviceActions.length; l++) {
-                        SupportDeviceAction sd = supportDeviceActions[l];
-                        sd.generateValue();
-                        res.append("{\"name\":\"" + sd.getName() + "\",\"value\":\"" + sd.getValue() + "\"}");
-                        if (l != supportDeviceActions.length - 1) {
-                            res.append(",");
-                        }
-                    }
-                    res.append("]");
-                }
-                res.append("}");
-                if (n != deviceActions.size() - 1) {
-                    res.append(",");
-                }
-            }
-            res.append("]}");
-            if (i != actionGroups.size() - 1) {
-                res.append(",");
-            }
+        res.append("{\"thing_id\":\""+this.id+"\",\"actions\":[");
+        for (DeviceAction deviceAction:this.deviceActionHashMap.values()){
+            if (isForStatistics&&!deviceAction.isNeedStatistics()) continue;
+            deviceAction.generateValue();
+            res.append("{\"id\":\""+deviceAction.getId()+"\",\"value\":\""+deviceAction.getValue()+"\"},");
         }
-        res.append("]}");
-        return res.toString();
+        String result=res.toString();
+        result=result.substring(0,result.length()-1);
+        result+="]}";
+        return result;
     }
-    /*-----------generateJsonFromStatisticsActions-------------------
-    private String generateJsonFromStatisticsActions(){
-        String res="{\"thing_id\":\""+this.id+"\",";
-        for (int i=0;i<deviceActions.size();i++){
-            DeviceAction d=deviceActions.get(i);
-            if (d.isNeedStatistics()) {
-                d.generateValue();
-                res += "\"" + d.getName() + "\":\"" + d.getValue() + "\",";
-            }
-        }
-        res=res.substring(0,res.length()-1);
-        res+="}";
-        return res;
-    }
-    */
     public void sendDataFromActions(boolean isForStatistics){
         System.out.println("Device id="+this.id+" is sending data...");
         String res = generateJsonFromActions(isForStatistics);

@@ -18,17 +18,19 @@ public class DeviceAction {
     private String value;
     private String[] modes=null;
     private int delay=0;
-    private ActionGroup owner;
+    private Device owner;
+    private int id;
     private boolean isNeedStatistics;
     private SupportDeviceAction[] supportActions=null;
-    private HashMap<String,SupportDeviceAction> supportDeviceActionsMap=new HashMap<String, SupportDeviceAction>();
     private String from;
     private String to;
 
 
-    public DeviceAction(JsonObject param, ActionGroup owner) {
+    public DeviceAction(JsonObject param, Device owner) {
         this.owner=owner;
         this.name=param.get("name").getAsString();
+        this.id=param.get("id").getAsInt();
+
         this.format=param.get("format").getAsString();
         this.isChangeable=param.get("isChangeable").getAsBoolean();
         this.isNeedStatistics=param.get("isNeedStatistics").getAsBoolean();
@@ -52,24 +54,25 @@ public class DeviceAction {
             for (int i = 0; i < jsonSupports.size(); i++) {
                 SupportDeviceAction d=new SupportDeviceAction(jsonSupports.get(i).getAsJsonObject(),this.owner,this);
                 supportActions[i]=d;
-                supportDeviceActionsMap.put(d.getName().toLowerCase(),d);
+                this.owner.getDeviceActionHashMap().put(d.getId(),d);
             }
         }
 
 
 
     }
-    public HashMap<String, SupportDeviceAction> getSupportDeviceActionsMap() {
-        return supportDeviceActionsMap;
+    public Device getOwner() {
+        return owner;
+    }
+
+    public int getId() {
+        return id;
     }
     public SupportDeviceAction[] getSupportActions() {
         return supportActions;
     }
     public boolean isNeedStatistics() {
         return isNeedStatistics;
-    }
-    public ActionGroup getOwner() {
-        return owner;
     }
     public String[] getModes() {
         return modes;
