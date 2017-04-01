@@ -1,8 +1,6 @@
 package local.iotserver.thing.network;
 
-import local.iotserver.thing.handler.GetActionDataHandler;
-import local.iotserver.thing.handler.ThingCreationHandler;
-import local.iotserver.thing.handler.UpgradeActionHandler;
+import local.iotserver.thing.handler.GeneralHandler;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.HandlerList;
@@ -24,9 +22,7 @@ public class ServerManager {
     private final HashMap<String,Server> serverMap=new HashMap<String, Server>();
 
     private ServerManager() {
-        ThingCreationHandler thingCreationHandler=new ThingCreationHandler();
-        UpgradeActionHandler upgradeActionHandler=new UpgradeActionHandler();
-        GetActionDataHandler getActionDataHandler=new GetActionDataHandler();
+        GeneralHandler generalHandler=new GeneralHandler();
 
         Server server=new Server(3000);
         ServletContextHandler context=new ServletContextHandler(ServletContextHandler.SESSIONS);
@@ -38,9 +34,7 @@ public class ServerManager {
         HandlerList handlers = new HandlerList();
         handlers.setHandlers(new Handler[] { resourceHandler, context });
         server.setHandler(handlers);
-        context.addServlet(new ServletHolder(thingCreationHandler),"/newdevice");
-        context.addServlet(new ServletHolder(upgradeActionHandler),"/upgradeaction");
-        context.addServlet(new ServletHolder(getActionDataHandler),"/getactiondata");
+        context.addServlet(new ServletHolder(generalHandler),"/*");
         try {
             server.start();
             server.join();

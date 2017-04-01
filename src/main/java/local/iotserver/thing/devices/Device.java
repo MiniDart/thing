@@ -11,11 +11,11 @@ import java.util.HashMap;
  * Created by Sergey on 19.11.2016.
  */
 public class Device implements Runnable {
-    private final static HashMap<Integer,Device> devices=new HashMap<Integer, Device>();
+    private final static HashMap<String,Device> devices=new HashMap<String, Device>();
     private final static ArrayList<Thread> deviceThreads=new ArrayList<Thread>();
     private String param;
-    private HashMap<Integer,DeviceAction> deviceActionHashMap=new HashMap<Integer, DeviceAction>();
-    private int id;
+    private HashMap<String,DeviceAction> deviceActionHashMap=new HashMap<String, DeviceAction>();
+    private String uri;
     private String name;
     private  String thingGroup;
     private boolean haveStatisticsElements;
@@ -25,14 +25,14 @@ public class Device implements Runnable {
     public Device(String param) {
         this.param=param;
         JsonObject mainFeatures = new JsonParser().parse(param).getAsJsonObject();
-        this.id=mainFeatures.get("id").getAsInt();
+        this.uri=mainFeatures.get("uri").getAsString();
         this.name=mainFeatures.get("name").getAsString();
         this.thingGroup=mainFeatures.get("thingGroup").getAsString();
         this.updateTime=mainFeatures.get("updateTime").getAsInt();
         JsonArray actionGroups=mainFeatures.get("actionGroups").getAsJsonArray();
         findActions(actionGroups);
 
-        devices.put(this.id,this);
+        devices.put(this.uri,this);
         sayHi();
     }
 
@@ -52,13 +52,13 @@ public class Device implements Runnable {
 
     }
     private void sayHi(){
-        System.out.println(id+"-sayHi()");
+        System.out.println(uri+"-sayHi()");
 
         Fields.Field upgrade_thing = new Fields.Field("new_thing", param);
         Fields fields = new Fields();
         fields.put(upgrade_thing);
-        String answer=clientManager.sendPost("http://iotmanager.local/newthing",fields);
-        System.out.println("Creation status for device id="+this.id+" - "+answer);
+        String answer=clientManager.sendPost("http://iotmanager.local/",fields);
+        System.out.println("Creation status for device uri="+this.uri+" - "+answer);
 
     }
     private void findActions(JsonArray actionGroupsJson){
@@ -67,7 +67,7 @@ public class Device implements Runnable {
                 JsonArray actionsJson=actionGroupJson.getAsJsonObject().get("actions").getAsJsonArray();
                 for (JsonElement actionJson:actionsJson){
                     DeviceAction deviceAction=new DeviceAction(actionJson.getAsJsonObject(),this);
-                    this.deviceActionHashMap.put(deviceAction.getId(),deviceAction);
+                    this.deviceActionHashMap.put(deviceAction.getUri(),deviceAction);
                 }
             }
             if (actionGroupJson.getAsJsonObject().has("actionGroups")){
@@ -75,10 +75,10 @@ public class Device implements Runnable {
             }
         }
     }
-    public HashMap<Integer, DeviceAction> getDeviceActionHashMap() {
+    public HashMap<String, DeviceAction> getDeviceActionHashMap() {
         return deviceActionHashMap;
     }
-    public static HashMap<Integer, Device> getDevices() {
+    public static HashMap<String, Device> getDevices() {
         return devices;
     }
 
@@ -91,8 +91,8 @@ public class Device implements Runnable {
     }
 
 
-    public int getId() {
-        return id;
+    public String getUri() {
+        return uri;
     }
 
     public String getName() {
@@ -102,7 +102,7 @@ public class Device implements Runnable {
     public String getThingGroup() {
         return thingGroup;
     }
-    public synchronized String generateJsonFromActions(boolean isForStatistics){
+    public synchronized String generateJsonFromActions(boolean isForStatistics,ArrayList<DeviceAction> actions){
         /*
         Gson gson=new Gson();
         HashMap<String,String> hashMapJson=new HashMap<String, String>();
@@ -155,26 +155,26 @@ public class Device implements Runnable {
         hashMapJson.put("actionGroups",gson.toJson(groupActionString));
         */
         StringBuilder res=new StringBuilder();
-        res.append("{\"thing_id\":\""+this.id+"\",\"actions\":[");
-        for (DeviceAction deviceAction:this.deviceActionHashMap.values()){
+        res.append("[");
+        for (DeviceAction deviceAction:actions){
             if (isForStatistics&&!deviceAction.isNeedStatistics()) continue;
             deviceAction.generateValue();
-            res.append("{\"id\":\""+deviceAction.getId()+"\",\"value\":\""+deviceAction.getValue()+"\"},");
+            res.append("{\"uri\":\""+deviceAction.getUri()+"\",\"value\":\""+deviceAction.getValue()+"\"},");
         }
         String result=res.toString();
         result=result.substring(0,result.length()-1);
-        result+="]}";
+        result+="]";
         return result;
     }
     public void sendDataFromActions(boolean isForStatistics){
-        System.out.println("Device id="+this.id+" is sending data...");
-        String res = generateJsonFromActions(isForStatistics);
+        System.out.println("Device id="+this.uri+" is sending data...");
+        String res = generateJsonFromActions(isForStatistics,null);
         Fields.Field upgrade_thing = new Fields.Field("thing_param", res);
         Fields fields = new Fields();
         fields.put(upgrade_thing);
         String  answer;
         if (isForStatistics) answer=clientManager.sendPost("http://iotmanager.local/upgradeactionsdata",fields);
         else answer=clientManager.sendPost("http://iotmanager.local/upgradeactionsvalues",fields);
-        System.out.println("Sending data status for device id="+this.id+" - "+answer);
+        System.out.println("Sending data status for device id="+this.uri+" - "+answer);
     }
 }

@@ -19,7 +19,7 @@ public class DeviceAction {
     private String[] modes=null;
     private int delay=0;
     private Device owner;
-    private int id;
+    private String uri;
     private boolean isNeedStatistics;
     private SupportDeviceAction[] supportActions=null;
     private String from;
@@ -29,7 +29,7 @@ public class DeviceAction {
     public DeviceAction(JsonObject param, Device owner) {
         this.owner=owner;
         this.name=param.get("name").getAsString();
-        this.id=param.get("id").getAsInt();
+        this.uri=param.get("uri").getAsString();
 
         this.format=param.get("format").getAsString();
         this.isChangeable=param.get("isChangeable").getAsBoolean();
@@ -54,7 +54,7 @@ public class DeviceAction {
             for (int i = 0; i < jsonSupports.size(); i++) {
                 SupportDeviceAction d=new SupportDeviceAction(jsonSupports.get(i).getAsJsonObject(),this.owner,this);
                 supportActions[i]=d;
-                this.owner.getDeviceActionHashMap().put(d.getId(),d);
+                this.owner.getDeviceActionHashMap().put(d.getUri(),d);
             }
         }
 
@@ -65,8 +65,8 @@ public class DeviceAction {
         return owner;
     }
 
-    public int getId() {
-        return id;
+    public String getUri() {
+        return uri;
     }
     public SupportDeviceAction[] getSupportActions() {
         return supportActions;
