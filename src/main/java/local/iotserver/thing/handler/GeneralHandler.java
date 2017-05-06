@@ -26,9 +26,12 @@ public class GeneralHandler extends HttpServlet {
         response.setContentType("text/html;charset=utf-8");
         response.getWriter().println(answer);
         response.setStatus(HttpServletResponse.SC_OK);
-        Thread t=new Thread(new Device(answer));
-        Device.getDeviceThreads().add(t);
-        t.start();
+        Device d=new Device(answer);
+        if (d.isHaveClient) {
+            Thread t = new Thread(d);
+            Device.getDeviceThreads().add(t);
+            t.start();
+        }
     }
 
     @Override
@@ -37,13 +40,17 @@ public class GeneralHandler extends HttpServlet {
         if (uri_json==null) return;
         String path=req.getPathInfo();
         String uri="localhost:3000"+path.substring(0,path.length()-1);
+        if (!Device.getDevices().containsKey(uri)){
+            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
         Device d=Device.getDevices().get(uri);
         JsonArray actions_json = new JsonParser().parse(uri_json).getAsJsonArray();
         ArrayList<DeviceAction> devices=new ArrayList<DeviceAction>();
         for (int i=0;i<actions_json.size();i++){
             devices.add(d.getDeviceActionHashMap().get(actions_json.get(i).getAsString()));
         }
-        String data=d.generateJsonFromActions(false,devices);
+        String data=d.generateJsonFromActions(devices);
         resp.setContentType("text/html;charset=utf-8");
         resp.getWriter().println(data);
         resp.setStatus(HttpServletResponse.SC_OK);
@@ -60,7 +67,8 @@ public class GeneralHandler extends HttpServlet {
         Device d=Device.getDevices().get(uri);
         JsonArray actions_json = new JsonParser().parse(uri_json).getAsJsonArray();
         for (int i=0;i<actions_json.size();i++){
-            d.getDeviceActionHashMap().get(actions_json.get(i).getAsJsonObject().get("uri").getAsString()).setValue(actions_json.get(i).getAsJsonObject().get("value").getAsString());
+            d.getDeviceActionHashMap().get(actions_json.get(i).getAsJsonObject().get("uri").getAsString())
+                    .setValue(actions_json.get(i).getAsJsonObject().get("value").getAsString());
         }
         resp.setContentType("text/html;charset=utf-8");
         resp.getWriter().println("Success");

@@ -15,7 +15,7 @@ public class Main
 {
     public static void main( String[] args )
     {
-        ServerManager serverManager=ServerManager.getInstance();
-        ClientManager clientManager=ClientManager.getInstance();
+        ServerManager.getInstance();
+        ClientManager.getInstance();
     }
 }

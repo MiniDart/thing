@@ -2,10 +2,15 @@ package local.iotserver.thing.devices;
 
 import com.google.gson.*;
 import local.iotserver.thing.network.ClientManager;
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.util.Fields;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Created by Sergey on 19.11.2016.
@@ -18,8 +23,9 @@ public class Device implements Runnable {
     private String uri;
     private String name;
     private  String thingGroup;
-    private boolean haveStatisticsElements;
     private int updateTime;
+    private int id;
+    public boolean isHaveClient;
     static ClientManager clientManager=ClientManager.getInstance();
 
     public Device(String param) {
@@ -29,20 +35,18 @@ public class Device implements Runnable {
         this.name=mainFeatures.get("name").getAsString();
         this.thingGroup=mainFeatures.get("thingGroup").getAsString();
         this.updateTime=mainFeatures.get("updateTime").getAsInt();
+        this.isHaveClient=mainFeatures.has("isHaveClient")&&mainFeatures.get("isHaveClient").getAsBoolean();
         JsonArray actionGroups=mainFeatures.get("actionGroups").getAsJsonArray();
         findActions(actionGroups);
-
         devices.put(this.uri,this);
         sayHi();
     }
 
     public void run() {
-        System.out.println("in Device run method");
-        if (!haveStatisticsElements) return;
         while (!Thread.currentThread().isInterrupted()) {
-            sendDataFromActions(true);
+            sendDataFromActions();
             try {
-                Thread.sleep(this.updateTime);
+                Thread.sleep(this.updateTime*1000);
             }
             catch (InterruptedException e){
                 return;
@@ -53,12 +57,14 @@ public class Device implements Runnable {
     }
     private void sayHi(){
         System.out.println(uri+"-sayHi()");
-
         Fields.Field upgrade_thing = new Fields.Field("new_thing", param);
         Fields fields = new Fields();
         fields.put(upgrade_thing);
         String answer=clientManager.sendPost("http://iotmanager.local/",fields);
         System.out.println("Creation status for device uri="+this.uri+" - "+answer);
+        if (this.isHaveClient){
+            this.id=Integer.parseInt(answer.split(" ")[1].substring(3));
+        }
 
     }
     private void findActions(JsonArray actionGroupsJson){
@@ -102,62 +108,10 @@ public class Device implements Runnable {
     public String getThingGroup() {
         return thingGroup;
     }
-    public synchronized String generateJsonFromActions(boolean isForStatistics,ArrayList<DeviceAction> actions){
-        /*
-        Gson gson=new Gson();
-        HashMap<String,String> hashMapJson=new HashMap<String, String>();
-        hashMapJson.put("thing_id",String.valueOf(this.id));
-        ArrayList<String> groupActionString=new ArrayList<String>();
-            for (int i=0;i<this.actionGroups.size();i++){
-                ActionGroup actionGroup;
-                if (isForStatistics) {
-                    if (this.actionGroups.get(i).isHaveStatisticsElements()) {
-                        actionGroup=this.actionGroups.get(i);
-
-                    }
-                    else continue;
-                }
-                else actionGroup=this.actionGroups.get(i);
-                HashMap<String,String> actionGroupHashMap=new HashMap<String, String>();
-                actionGroupHashMap.put("name",actionGroup.getName());
-                ArrayList<DeviceAction> deviceActions=actionGroup.getDeviceActions();
-                ArrayList<String> deviceActionString=new ArrayList<String>();
-                for (int l=0;l<deviceActions.size();l++){
-                    DeviceAction deviceAction;
-                    if (isForStatistics){
-                        if (deviceActions.get(i).isNeedStatistics()){
-                            deviceAction=deviceActions.get(i);
-                        }
-                        else continue;
-                    }
-                    else deviceAction=deviceActions.get(i);
-                    HashMap<String,String> deviceActionHashMap=new HashMap<String, String>();
-                    deviceAction.generateValue();
-                    deviceActionHashMap.put("name",deviceAction.getName());
-                    deviceActionHashMap.put("value",String.valueOf(deviceAction.getValue()));
-                    if (deviceAction.getSupportActions()!=null){
-                        ArrayList<String> supportActionsString=new ArrayList<String>();
-                        for (int m=0;m<deviceAction.getSupportActions().length;m++){
-                            HashMap<String,String> supportActionsHashMap=new HashMap<String, String>();
-                            SupportDeviceAction supportDeviceAction=deviceAction.getSupportActions()[m];
-                            supportDeviceAction.generateValue();
-                            supportActionsHashMap.put("name",supportDeviceAction.getName());
-                            supportActionsHashMap.put("value",String.valueOf(supportDeviceAction.getValue()));
-                            supportActionsString.add(gson.toJson(supportActionsHashMap));
-                        }
-                        deviceActionHashMap.put("supportActions",gson.toJson(supportActionsString));
-                    }
-                    deviceActionString.add(gson.toJson(deviceActionHashMap));
-                }
-                actionGroupHashMap.put("actions",gson.toJson(deviceActionString));
-                groupActionString.add(gson.toJson(actionGroupHashMap));
-            }
-        hashMapJson.put("actionGroups",gson.toJson(groupActionString));
-        */
+    public synchronized String generateJsonFromActions(ArrayList<DeviceAction> actions){
         StringBuilder res=new StringBuilder();
         res.append("[");
         for (DeviceAction deviceAction:actions){
-            if (isForStatistics&&!deviceAction.isNeedStatistics()) continue;
             deviceAction.generateValue();
             res.append("{\"uri\":\""+deviceAction.getUri()+"\",\"value\":\""+deviceAction.getValue()+"\"},");
         }
@@ -166,15 +120,10 @@ public class Device implements Runnable {
         result+="]";
         return result;
     }
-    public void sendDataFromActions(boolean isForStatistics){
+    public void sendDataFromActions(){
         System.out.println("Device id="+this.uri+" is sending data...");
-        String res = generateJsonFromActions(isForStatistics,null);
-        Fields.Field upgrade_thing = new Fields.Field("thing_param", res);
-        Fields fields = new Fields();
-        fields.put(upgrade_thing);
-        String  answer;
-        if (isForStatistics) answer=clientManager.sendPost("http://iotmanager.local/upgradeactionsdata",fields);
-        else answer=clientManager.sendPost("http://iotmanager.local/upgradeactionsvalues",fields);
-        System.out.println("Sending data status for device id="+this.uri+" - "+answer);
+        String res = generateJsonFromActions(new ArrayList<DeviceAction>(deviceActionHashMap.values()));
+        String answer=clientManager.sendPut("http://iotmanager.local/"+this.id,res);
+        System.out.println("Sending data value for device id=" + this.id + " - " + answer);
     }
 }

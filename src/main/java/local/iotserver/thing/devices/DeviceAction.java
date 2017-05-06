@@ -20,7 +20,6 @@ public class DeviceAction {
     private int delay=0;
     private Device owner;
     private String uri;
-    private boolean isNeedStatistics;
     private SupportDeviceAction[] supportActions=null;
     private String from;
     private String to;
@@ -33,7 +32,6 @@ public class DeviceAction {
 
         this.format=param.get("format").getAsString();
         this.isChangeable=param.get("isChangeable").getAsBoolean();
-        this.isNeedStatistics=param.get("isNeedStatistics").getAsBoolean();
         if (param.has("range")) {
             if (this.format.equals("list")) {
                 JsonArray jsonModes = param.getAsJsonArray("range");
@@ -70,9 +68,6 @@ public class DeviceAction {
     }
     public SupportDeviceAction[] getSupportActions() {
         return supportActions;
-    }
-    public boolean isNeedStatistics() {
-        return isNeedStatistics;
     }
     public String[] getModes() {
         return modes;
@@ -113,7 +108,7 @@ public class DeviceAction {
         if (format.equals("number")){
             int from=this.from==null?(-10000):Integer.parseInt(this.from);
             int to=this.to==null?(10000):Integer.parseInt(this.to);
-            value=""+(int)(Math.random()*to+from);
+            value=""+(int)((Math.random()*(to-from))+from);
             System.out.println("Generated "+this.name+"="+this.value+"; format="+this.format);
         }
         else if (format.equals("list")){
