@@ -20,7 +20,6 @@ public class DeviceAction {
     private int delay=0;
     private Device owner;
     private String uri;
-    private SupportDeviceAction[] supportActions=null;
     private String from;
     private String to;
 
@@ -48,10 +47,8 @@ public class DeviceAction {
         }
         if (param.has("support")){
         JsonArray jsonSupports=param.getAsJsonArray("support");
-            supportActions=new SupportDeviceAction[jsonSupports.size()];
             for (int i = 0; i < jsonSupports.size(); i++) {
-                SupportDeviceAction d=new SupportDeviceAction(jsonSupports.get(i).getAsJsonObject(),this.owner,this);
-                supportActions[i]=d;
+                DeviceAction d=new DeviceAction(jsonSupports.get(i).getAsJsonObject(),this.owner);
                 this.owner.getDeviceActionHashMap().put(d.getUri(),d);
             }
         }
@@ -59,39 +56,13 @@ public class DeviceAction {
 
 
     }
-    public Device getOwner() {
-        return owner;
-    }
 
     public String getUri() {
         return uri;
     }
-    public SupportDeviceAction[] getSupportActions() {
-        return supportActions;
-    }
-    public String[] getModes() {
-        return modes;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getFormat() {
-        return format;
-    }
-
-    public boolean isChangeable() {
-        return isChangeable;
-    }
-
 
     public Object getValue() {
         return value;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
 
@@ -113,15 +84,6 @@ public class DeviceAction {
         }
         else if (format.equals("list")){
             value=modes[(int)(Math.random()*modes.length)];
-            System.out.println("Generated "+this.name+"="+this.value+"; format="+this.format);
-        }
-        else if (format.equals("date")){
-            Date d=new Date();
-            d.setHours((int)(Math.random()*24));
-            d.setMinutes((int)(Math.random()*60));
-            d.setSeconds((int)(Math.random()*60));
-            SimpleDateFormat dateFormat=new SimpleDateFormat("hh:mm:ss");
-            value=dateFormat.format(d);
             System.out.println("Generated "+this.name+"="+this.value+"; format="+this.format);
         }
     }

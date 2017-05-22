@@ -42,18 +42,6 @@ public class ClientManager {
         if (name==null) return clientMap.get("default");
         return clientMap.get(name);
     }
-    public void putClient(String name, HttpClient client){
-        clientMap.put(name,client);
-    }
-    public void stopClient(String name){
-        try{
-            clientMap.get(name).stop();
-        }
-        catch (Exception e){
-            e.printStackTrace();
-        }
-        clientMap.remove(name);
-    }
     public void stopAllClients(){
         Collection<HttpClient> clients=clientMap.values();
         for (HttpClient c:clients){

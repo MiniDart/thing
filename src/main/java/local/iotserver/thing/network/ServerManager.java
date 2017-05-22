@@ -47,21 +47,6 @@ public class ServerManager {
         }
         serverMap.put("default",server);
     }
-    public Server getServer(String name){
-        return serverMap.get(name);
-    }
-    public void putServer(String name,  Server server){
-        serverMap.put(name,server);
-    }
-    public void stopServer(String name){
-        try{
-            serverMap.get(name).stop();
-        }
-        catch (Exception e){
-            e.printStackTrace();
-        }
-        serverMap.remove(name);
-    }
     public void stopAllServers(){
         Collection<Server> clients=serverMap.values();
         for (Server c:clients){
