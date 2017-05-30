@@ -96,6 +96,6 @@ public class Device implements Runnable {
         System.out.println("Device uri="+this.uri+" is sending data...");
         String res = generateJsonFromActions(new ArrayList<DeviceAction>(deviceActionHashMap.values()));
         String answer=clientManager.sendPut("http://iotmanager.local/"+this.id,res);
-        System.out.println("Sending data value for device id=" + this.uri + " - " + answer);
+        System.out.println("Sending data value for device uri=" + this.uri + " - " + answer);
     }
 }
